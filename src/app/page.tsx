@@ -1,81 +1,275 @@
-import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
-import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/16/solid";
-import Image from "next/image";
+'use client';
+
+import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/react";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/16/solid";
+import { useFormik } from "formik";
+import { useState } from "react";
 
 export default function Home() {
-const navigation = [
-  { name: 'Dashboard', href: '#', current: true },
-  { name: 'estudiante', href: '#', current: false },
-  { name: 'tareas', href: '#', current: false },
-]
+  const navigation = [
+    { name: 'Dashboard', href: '#', current: true },
+    { name: 'Estudiante', href: '#', current: false },
+    { name: 'Tareas', href: '#', current: false },
+  ];
 
-function classNames(...classes) {
-  return classes.filter(Boolean).join(' ')
-}
+  const students: { nombre: string; id: number }[] = [
+    {
+      nombre: "joel",
+      id: 1,
+    },
+    {
+      nombre: "nicolas",
+      id: 2,
+    }
+  ];
+  const tasks: { titulo: string; descripcion: string; fecha_entrega: string; id: number; estudianteId: number }[] = [];
 
+  const [tabActivo, setTabActivo] = useState("dashboard");
+
+  function classNames(...classes: string[]) {
+    return classes.filter(Boolean).join(" ");
+  }
+
+  const formik = useFormik({
+    initialValues: {
+      nombre: "",
+      rut: "",
+      correo: "",
+    },
+    onSubmit: values => {
+      alert(JSON.stringify(values, null, 2))
+    },
+  })
+  const formikTarea = useFormik({
+    initialValues: {
+      titulo: "",
+      descripcion: "",
+      fecha_entrega: "",
+      prioridad: "",
+    },
+    onSubmit: values => {
+      alert(JSON.stringify(values, null, 2))
+    },
+  })
   return (
     <div>
-      <Disclosure
-      as="nav"
-      className="relative bg-gray-800/50 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-white/10"
-    >
-      <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
-        <div className="relative flex h-16 items-center justify-between">
-          <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
-            {/* Mobile menu button*/}
-            <DisclosureButton className="group relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-white/5 hover:text-white focus:outline-2 focus:-outline-offset-1 focus:outline-indigo-500">
-              <span className="absolute -inset-0.5" />
-              <span className="sr-only">Open main menu</span>
-              <Bars3Icon aria-hidden="true" className="block size-6 group-data-open:hidden" />
-              <XMarkIcon aria-hidden="true" className="hidden size-6 group-data-open:block" />
-            </DisclosureButton>
-          </div>
-          <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
-            <div className="flex shrink-0 items-center">
-            <h1>Sistema de gestion educativa</h1>
-            </div>
-            <div className="hidden sm:ml-6 sm:block">
-              <div className="flex space-x-4">
-                {navigation.map((item) => (
-                  <a
-                    key={item.name}
-                    href={item.href}
-                    aria-current={item.current ? 'page' : undefined}
-                    className={classNames(
-                      item.current ? 'bg-gray-950/50 text-white' : 'text-gray-300 hover:bg-white/5 hover:text-white',
-                      'rounded-md px-3 py-2 text-sm font-medium',
-                    )}
-                  >
-                    {item.name}
-                  </a>
-                ))}
+      {/* NAVBAR */}
+      <div className="mt-6 flex space-x-4 justify-center">
+        <button
+          onClick={() => setTabActivo("dashboard")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium ${tabActivo === "dashboard" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
+            }`}
+        >
+          Dashboard
+        </button>
+        <button
+          onClick={() => setTabActivo("estudiantes")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium ${tabActivo === "estudiantes" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
+            }`}
+        >
+          Estudiantes
+        </button>
+        <button
+          onClick={() => setTabActivo("tareas")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium ${tabActivo === "tareas" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
+            }`}
+        >
+          Tareas
+        </button>
+
+      </div>
+      {/* TAB CONTENT */}
+      <div className="p-6">
+        {tabActivo === "dashboard" && (
+          <div>
+            <h2 className="text-3xl mx-auto mt-20 font-bold h-14 bg-linear-to-r from-cyan-500 to-blue-500 mb-4 rounded-tl-lg rounded-tr-lg">Panel de control</h2>
+            <p className="text-xl mx-auto text-gray-700 h-14 bg-linear-to-r from-cyan-500 to-blue-500 mb-8 rounded-bl-lg rounded-br-lg">Gestiona estudiantes y tareas de manera eficiente</p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-xl font-medium text-gray-900">Alumnos registrados</h3>
+                <p className="text-3xl font-bold text-blue-600">{students.length}</p>
+              </div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-xl font-medium text-gray-900">Tareas creadas</h3>
+                <p className="text-3xl font-bold text-blue-600">{tasks.length}</p>
               </div>
             </div>
-          </div>       
-        </div>
-      </div>
+          </div>
+        )}
 
-      <DisclosurePanel className="sm:hidden">
-        <div className="space-y-1 px-2 pt-2 pb-3">
-          {navigation.map((item) => (
-            <DisclosureButton
-              key={item.name}
-              as="a"
-              href={item.href}
-              aria-current={item.current ? 'page' : undefined}
-              className={classNames(
-                item.current ? 'bg-gray-950/50 text-white' : 'text-gray-300 hover:bg-white/5 hover:text-white',
-                'block rounded-md px-3 py-2 text-base font-medium',
-              )}
-            >
-              {item.name}
-            </DisclosureButton>
-          ))}
-        </div>
-      </DisclosurePanel>
-    </Disclosure>
-      <p className="text-6xl mx-auto mt-13 bg-green-300 border rounded-r-lg rounded-l-lg">Panel de control</p>
-      <p className="text-2xl mx-auto mt-13 bg-green-300 border rounded-r-lg rounded-l-lg">Gestiona estudiantes y tareas de manera eficiente</p>
+        {tabActivo === "estudiantes" && (
+          <div>
+            <h2 className="text-3xl font-bold mb-4">Estudiantes registrados</h2>
+            <form onSubmit={formik.handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  nombre
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="nombre"
+                    value={formik.values.nombre}
+                    onChange={formik.handleChange}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Ingresa el nombre del alumno"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  rut
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="rut"
+                    value={formik.values.rut}
+                    onChange={formik.handleChange}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="rut del estudiante"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  correo
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    name="correo"
+                    value={formik.values.correo}
+                    onChange={formik.handleChange}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Ej: correo del estudiante"
+                    required
+                  />
+                </div>
+              </div>             
+              <button
+                type="submit"
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 font-medium"
+              >
+                Registrar Alumno
+              </button>
+            </form>
+            {students.length > 0 ? (
+              <div className="space-y-3">
+                {students.map((student) => (
+                  <div key={student.id} className="p-4 bg-gray-100 rounded-lg">
+                    <p className="text-lg font-medium">{student.nombre}</p>
+                    <p className="text-sm text-gray-500">ID: {student.id}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">No hay estudiantes registrados</p>
+            )}
+          </div>
+        )}
+
+        {tabActivo === "tareas" && (
+          <div>
+            <h2 className="text-3xl font-bold mb-4">Tareas creadas</h2>
+            {tasks.length > 0 ? (
+              <div className="space-y-3">
+                {tasks.map((task) => (
+                  <div key={task.id} className="p-4 bg-gray-100 rounded-lg">
+                    <p className="text-lg font-medium">{task.titulo}</p>
+                    <p className="text-sm text-gray-500">Vence: {task.fecha_entrega}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">No hay tareas creadas</p>
+            )}
+            <form onSubmit={formikTarea.handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="titulo" className="block text-sm font-medium text-gray-700 mb-2">
+                  Título
+                </label>
+                <input
+                  id="titulo"
+                  name="titulo"
+                  type="text"
+                  onChange={formikTarea.handleChange}
+                  value={formikTarea.values.titulo}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  placeholder="Ej: Ensayo sobre Historia"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 mb-2">
+                  Descripción
+                </label>
+                <textarea
+                  id="descripcion"
+                  name="descripcion"
+                  onChange={formikTarea.handleChange}
+                  value={formikTarea.values.descripcion}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 resize-none"
+                  placeholder="Describe los detalles de la tarea..."
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="fecha_entrega" className="block text-sm font-medium text-gray-700 mb-2">
+                    Fecha de entrega
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="fecha_entrega"
+                      name="fecha_entrega"
+                      type="date"
+                      onChange={formikTarea.handleChange}
+                      value={formikTarea.values.fecha_entrega}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="prioridad" className="block text-sm font-medium text-gray-700 mb-2">
+                    Prioridad
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="prioridad"
+                      name="prioridad"
+                      onChange={formikTarea.handleChange}
+                      value={formikTarea.values.prioridad}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                    >
+                      <option value="alta">Alta</option>
+                      <option value="media">Media</option>
+                      <option value="baja">Baja</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 font-medium"
+              >
+                Crear Tarea
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
