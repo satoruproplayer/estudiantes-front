@@ -1,274 +1,320 @@
-'use client';
+"use client";
 
-import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/react";
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/16/solid";
-import { useFormik } from "formik";
-import { useState } from "react";
+import { Input, Button, Textarea } from "@headlessui/react";
+import { PlusIcon } from "@heroicons/react/16/solid";
+import { useEffect, useState } from "react";
+import { createEstudiante, getEstudiantes } from "./lib/estudiantes-crud";
+import { createTarea, getTareas } from "./lib/tareas-crud";
+
+interface Student {
+  id: number;
+  rut: string;
+  nombre: string;
+  correo: string;
+}
+
+interface Task {
+  id: number;
+  titulo: string;
+  descripcion: string;
+  fecha_entrega: string;
+  estudianteId: number;
+  estudianteNombre?: string;
+}
 
 export default function Home() {
-  const navigation = [
-    { name: 'Dashboard', href: '#', current: true },
-    { name: 'Estudiante', href: '#', current: false },
-    { name: 'Tareas', href: '#', current: false },
-  ];
+  const [students, setStudents] = useState<Student[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const students: { nombre: string; id: number }[] = [
-    {
-      nombre: "joel",
-      id: 1,
-    },
-    {
-      nombre: "nicolas",
-      id: 2,
+  const [studentForm, setStudentForm] = useState({
+    rut: "",
+    nombre: "",
+    correo: "",
+  });
+
+  const [taskForm, setTaskForm] = useState({
+    titulo: "",
+    descripcion: "",
+    fecha_entrega: "",
+    estudianteId: 0,
+  });
+
+  const fetchStudents = async () => {
+    try {
+      const { data } = await getEstudiantes();
+      console.log(data)
+      setStudents(data || []);
+    } catch (err) {
+      console.error("Error al cargar estudiantes:", err);
     }
-  ];
-  const tasks: { titulo: string; descripcion: string; fecha_entrega: string; id: number; estudianteId: number }[] = [];
+  };
 
-  const [tabActivo, setTabActivo] = useState("dashboard");
-
-  function classNames(...classes: string[]) {
-    return classes.filter(Boolean).join(" ");
+  const fetchTasks = async () => {
+    try {
+      const { data } = await getTareas();
+      console.log(data)
+      setTasks(data || []);
+    } catch (err) {
+      console.error("Error al cargar tareas:", err)
+    }
   }
 
-  const formik = useFormik({
-    initialValues: {
-      nombre: "",
-      rut: "",
-      correo: "",
-    },
-    onSubmit: values => {
-      alert(JSON.stringify(values, null, 2))
-    },
-  })
-  const formikTarea = useFormik({
-    initialValues: {
-      titulo: "",
-      descripcion: "",
-      fecha_entrega: "",
-      prioridad: "",
-    },
-    onSubmit: values => {
-      alert(JSON.stringify(values, null, 2))
-    },
-  })
+  useEffect(() => {
+    fetchStudents();
+    fetchTasks();
+  }, []);
+
+  const handleStudentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    if (!studentForm.rut || !studentForm.nombre || !studentForm.correo) {
+      setError("Todos los campos de estudiante son obligatorios.");
+      return;
+    }
+
+    try {
+      const response = await createEstudiante(studentForm);
+      const newStudent = response.data;
+
+      fetchStudents();
+      setStudents([...students, newStudent]);
+      setStudentForm({ rut: "", nombre: "", correo: "" });
+      setSuccess("Estudiante registrado con éxito.");
+    } catch (error: any) {
+      console.error("Error al crear estudiante:", error);
+      const msg = error?.response?.data?.message || "Ocurrió un error.";
+      setError(msg);
+    }
+  };
+
+  const handleTaskSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    const { titulo, descripcion, fecha_entrega, estudianteId } = taskForm;
+
+    if (!titulo || !descripcion || !fecha_entrega || !estudianteId) {
+      setError("Todos los campos de tarea son obligatorios.");
+      return;
+    }
+
+    try {
+      const response = await createTarea({
+        titulo,
+        descripcion,
+        fecha_entrega,
+        estudianteId,
+      });
+
+      const savedTask = response.data;
+
+      const selectedStudent = students.find(
+        (s) => String(s.id) === String(estudianteId)
+      );
+
+      const newTask: Task = {
+        ...savedTask,
+        estudianteId,
+        estudianteNombre: selectedStudent?.nombre || "Desconocido",
+      };
+
+      fetchTasks();
+      setTasks([...tasks, newTask]);
+      setTaskForm({
+        titulo: "",
+        descripcion: "",
+        fecha_entrega: "",
+        estudianteId: 0,
+      });
+      setSuccess("Tarea creada con éxito.");
+    } catch (error: any) {
+      console.error("Error al crear tarea:", error);
+      const msg = error?.response?.data?.message || "Ocurrió un error.";
+      setError(msg);
+    }
+  };
+
   return (
-    <div>
-      {/* NAVBAR */}
-      <div className="mt-6 flex space-x-4 justify-center">
-        <button
-          onClick={() => setTabActivo("dashboard")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium ${tabActivo === "dashboard" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
-            }`}
-        >
-          Dashboard
-        </button>
-        <button
-          onClick={() => setTabActivo("estudiantes")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium ${tabActivo === "estudiantes" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
-            }`}
-        >
-          Estudiantes
-        </button>
-        <button
-          onClick={() => setTabActivo("tareas")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium ${tabActivo === "tareas" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
-            }`}
-        >
-          Tareas
-        </button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-green-100 py-12 px-4">
+      <div className="max-w-3xl mx-auto">
+        <div className="text-center mb-10">
+          <h1 className="text-5xl font-extrabold text-gray-900 drop-shadow-sm">
+            🎓 Gestión Académica
+          </h1>
+          <p className="text-gray-600 text-lg mt-2">
+            Administra estudiantes y tareas fácilmente
+          </p>
+        </div>
 
-      </div>
-      {/* TAB CONTENT */}
-      <div className="p-6">
-        {tabActivo === "dashboard" && (
-          <div>
-            <h2 className="text-3xl mx-auto mt-20 font-bold h-14 bg-linear-to-r from-cyan-500 to-blue-500 mb-4 rounded-tl-lg rounded-tr-lg">Panel de control</h2>
-            <p className="text-xl mx-auto text-gray-700 h-14 bg-linear-to-r from-cyan-500 to-blue-500 mb-8 rounded-bl-lg rounded-br-lg">Gestiona estudiantes y tareas de manera eficiente</p>
+        {/* Mensajes */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 mb-4 rounded">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 mb-4 rounded">
+            {success}
+          </div>
+        )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-xl font-medium text-gray-900">Alumnos registrados</h3>
-                <p className="text-3xl font-bold text-blue-600">{students.length}</p>
-              </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-xl font-medium text-gray-900">Tareas creadas</h3>
-                <p className="text-3xl font-bold text-blue-600">{tasks.length}</p>
-              </div>
+        {/* Estudiante Form */}
+        <form
+          onSubmit={handleStudentSubmit}
+          className="mb-12 bg-white/80 backdrop-blur-lg border border-gray-200 rounded-xl shadow-xl p-6 space-y-5"
+        >
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">
+            Registrar Estudiante
+          </h2>
+
+          {["rut", "nombre", "correo"].map((field) => (
+            <div key={field} className="space-y-1">
+              <label
+                htmlFor={field}
+                className="block text-sm font-medium text-gray-700"
+              >
+                {field === "rut"
+                  ? "RUT"
+                  : field === "nombre"
+                    ? "Nombre Completo"
+                    : "Correo Electrónico"}
+              </label>
+              <Input
+                id={field}
+                type={field === "correo" ? "email" : "text"}
+                placeholder={
+                  field === "rut"
+                    ? "12.345.678-9"
+                    : field === "nombre"
+                      ? "Juan Pérez González"
+                      : "juan.perez@ejemplo.com"
+                }
+                value={studentForm[field as keyof typeof studentForm]}
+                onChange={(e) =>
+                  setStudentForm({
+                    ...studentForm,
+                    [field]: e.target.value,
+                  })
+                }
+                required
+                className="w-full"
+              />
             </div>
+          ))}
+
+          <Button
+            type="submit"
+            className="w-full bg-blue-600 text-white hover:bg-blue-700 transition-colors py-2 rounded-lg text-sm font-medium"
+          >
+            Registrar Estudiante
+          </Button>
+        </form>
+
+        {/* Tarea Form */}
+        <form
+          onSubmit={handleTaskSubmit}
+          className="bg-white/80 backdrop-blur-lg border border-gray-200 rounded-xl shadow-xl p-6 space-y-5"
+        >
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">
+            Crear Tarea
+          </h2>
+
+          <div className="space-y-1">
+            <label htmlFor="titulo" className="text-sm font-medium text-gray-700">
+              Título
+            </label>
+            <Input
+              id="titulo"
+              type="text"
+              placeholder="Ensayo sobre la Historia de Chile"
+              value={taskForm.titulo}
+              onChange={(e) =>
+                setTaskForm({ ...taskForm, titulo: e.target.value })
+              }
+              required
+              className="w-full"
+            />
           </div>
-        )}
 
-        {tabActivo === "estudiantes" && (
-          <div>
-            <h2 className="text-3xl font-bold mb-4">Estudiantes registrados</h2>
-            <form onSubmit={formik.handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  nombre
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    name="nombre"
-                    value={formik.values.nombre}
-                    onChange={formik.handleChange}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Ingresa el nombre del alumno"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  rut
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    name="rut"
-                    value={formik.values.rut}
-                    onChange={formik.handleChange}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="rut del estudiante"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  correo
-                </label>
-                <div className="relative">
-                  <input
-                    type="email"
-                    name="correo"
-                    value={formik.values.correo}
-                    onChange={formik.handleChange}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Ej: correo del estudiante"
-                    required
-                  />
-                </div>
-              </div>             
-              <button
-                type="submit"
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 font-medium"
-              >
-                Registrar Alumno
-              </button>
-            </form>
-            {students.length > 0 ? (
-              <div className="space-y-3">
-                {students.map((student) => (
-                  <div key={student.id} className="p-4 bg-gray-100 rounded-lg">
-                    <p className="text-lg font-medium">{student.nombre}</p>
-                    <p className="text-sm text-gray-500">ID: {student.id}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500">No hay estudiantes registrados</p>
-            )}
+          <div className="space-y-1">
+            <label htmlFor="descripcion" className="text-sm font-medium text-gray-700">
+              Descripción
+            </label>
+            <Textarea
+              id="descripcion"
+              placeholder="Detalles, objetivos y entregables..."
+              value={taskForm.descripcion}
+              onChange={(e) =>
+                setTaskForm({ ...taskForm, descripcion: e.target.value })
+              }
+              required
+              className="w-full min-h-[100px]"
+            />
           </div>
-        )}
 
-        {tabActivo === "tareas" && (
-          <div>
-            <h2 className="text-3xl font-bold mb-4">Tareas creadas</h2>
-            {tasks.length > 0 ? (
-              <div className="space-y-3">
-                {tasks.map((task) => (
-                  <div key={task.id} className="p-4 bg-gray-100 rounded-lg">
-                    <p className="text-lg font-medium">{task.titulo}</p>
-                    <p className="text-sm text-gray-500">Vence: {task.fecha_entrega}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500">No hay tareas creadas</p>
-            )}
-            <form onSubmit={formikTarea.handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="titulo" className="block text-sm font-medium text-gray-700 mb-2">
-                  Título
-                </label>
-                <input
-                  id="titulo"
-                  name="titulo"
-                  type="text"
-                  onChange={formikTarea.handleChange}
-                  value={formikTarea.values.titulo}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                  placeholder="Ej: Ensayo sobre Historia"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 mb-2">
-                  Descripción
-                </label>
-                <textarea
-                  id="descripcion"
-                  name="descripcion"
-                  onChange={formikTarea.handleChange}
-                  value={formikTarea.values.descripcion}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 resize-none"
-                  placeholder="Describe los detalles de la tarea..."
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="fecha_entrega" className="block text-sm font-medium text-gray-700 mb-2">
-                    Fecha de entrega
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="fecha_entrega"
-                      name="fecha_entrega"
-                      type="date"
-                      onChange={formikTarea.handleChange}
-                      value={formikTarea.values.fecha_entrega}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="prioridad" className="block text-sm font-medium text-gray-700 mb-2">
-                    Prioridad
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="prioridad"
-                      name="prioridad"
-                      onChange={formikTarea.handleChange}
-                      value={formikTarea.values.prioridad}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                    >
-                      <option value="alta">Alta</option>
-                      <option value="media">Media</option>
-                      <option value="baja">Baja</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 font-medium"
-              >
-                Crear Tarea
-              </button>
-            </form>
+          <div className="space-y-1">
+            <label htmlFor="fecha_entrega" className="text-sm font-medium text-gray-700">
+              Fecha de Entrega
+            </label>
+            <Input
+              id="fecha_entrega"
+              type="date"
+              value={taskForm.fecha_entrega}
+              onChange={(e) =>
+                setTaskForm({ ...taskForm, fecha_entrega: e.target.value })
+              }
+              required
+              className="w-full"
+            />
           </div>
-        )}
+
+          <div className="space-y-1">
+            <label htmlFor="estudiante" className="text-sm font-medium text-gray-700">
+              Asignar a Estudiante
+            </label>
+            <select
+              id="estudiante"
+              value={taskForm.estudianteId}
+              onChange={(e) =>
+                setTaskForm({ ...taskForm, estudianteId: Number(e.target.value) })
+              }
+              required
+              disabled={students.length === 0}
+              className={`w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 ${students.length === 0 ? "bg-gray-100 cursor-not-allowed" : ""
+                }`}
+            >
+              <option value="">Selecciona un estudiante</option>
+              {students.map((student) =>
+                student.id !== undefined ? (
+                  <option key={student.id.toString()} value={student.id}>
+                    {student.nombre}
+                  </option>
+                ) : null
+              )}
+
+            </select>
+          </div>
+
+          <Button
+            type="submit"
+            disabled={students.length === 0}
+            className="w-full bg-green-600 hover:bg-green-700 transition-colors flex items-center justify-center gap-2 py-2 rounded-lg text-white font-medium"
+          >
+            <PlusIcon className="w-5 h-5" />
+            Crear Tarea
+          </Button>
+
+          {students.length === 0 && (
+            <p className="text-sm text-center text-amber-600">
+              Debes registrar al menos un estudiante primero.
+            </p>
+          )}
+        </form>
       </div>
     </div>
   );
