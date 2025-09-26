@@ -3,26 +3,42 @@
 import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/16/solid";
 import { useFormik } from "formik";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createEstudiante, createTareas, getEstudiantes, getTareas, iEstudiante, iTarea } from "./axios-crud";
+
 
 export default function Home() {
+  const [estudiantes, setEstudiantes] = useState<iEstudiante[]>([]);
+  const [tareas, setTareas] = useState<iTarea[]>([]);
+
+  useEffect(() => {
+    const fetchEstudiantes = async () => {
+      try {
+        const response = await getEstudiantes();
+        setEstudiantes(response.data);
+      } catch (error) {
+        console.error("Error al obtener estudiantes:", error);
+      }
+    };
+    const fetchTareas = async () => {
+      try {
+        const response = await getTareas();
+        setTareas(response.data);
+      } catch (error) {
+        console.error("Error al obtener tareas:", error);
+      }
+    };
+
+    fetchTareas();
+
+    fetchEstudiantes();
+  }, []);
+
   const navigation = [
     { name: 'Dashboard', href: '#', current: true },
     { name: 'Estudiante', href: '#', current: false },
     { name: 'Tareas', href: '#', current: false },
   ];
-
-  const students: { nombre: string; id: number }[] = [
-    {
-      nombre: "joel",
-      id: 1,
-    },
-    {
-      nombre: "nicolas",
-      id: 2,
-    }
-  ];
-  const tasks: { titulo: string; descripcion: string; fecha_entrega: string; id: number; estudianteId: number }[] = [];
 
   const [tabActivo, setTabActivo] = useState("dashboard");
 
@@ -36,10 +52,21 @@ export default function Home() {
       rut: "",
       correo: "",
     },
-    onSubmit: values => {
-      alert(JSON.stringify(values, null, 2))
-    },
-  })
+    onSubmit: async (values, actions) => {
+      try {
+        await createEstudiante({
+          nombre: values.nombre,
+          rut: values.rut,
+          correo: values.correo,       
+        });
+      } catch (error) {
+
+      } finally {
+        actions.setSubmitting(false);
+      }
+    }
+})
+
   const formikTarea = useFormik({
     initialValues: {
       titulo: "",
@@ -47,10 +74,26 @@ export default function Home() {
       fecha_entrega: "",
       prioridad: "",
     },
-    onSubmit: values => {
-      alert(JSON.stringify(values, null, 2))
+    onSubmit: async (values, actions) => {
+      try {
+        await createTareas({
+          titulo: values.titulo,
+          descripcion: values.descripcion,
+          fecha_entrega: values.fecha_entrega,
+          estudiante: {
+            nombre: "Juan Pérez",
+            rut: "12345678-9",
+            correo: "juan@example.com"
+          }
+        });
+        actions.resetForm();
+      } catch (error) {
+      
+      } finally {
+        actions.setSubmitting(false);
+      }
     },
-  })
+  });
   return (
     <div>
       {/* NAVBAR */}
@@ -88,11 +131,11 @@ export default function Home() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="bg-white rounded-lg shadow p-6">
                 <h3 className="text-xl font-medium text-gray-900">Alumnos registrados</h3>
-                <p className="text-3xl font-bold text-blue-600">{students.length}</p>
+                <p className="text-3xl font-bold text-blue-600">{estudiantes.length}</p>
               </div>
               <div className="bg-white rounded-lg shadow p-6">
                 <h3 className="text-xl font-medium text-gray-900">Tareas creadas</h3>
-                <p className="text-3xl font-bold text-blue-600">{tasks.length}</p>
+                <p className="text-3xl font-bold text-blue-600">{tareas.length}</p>
               </div>
             </div>
           </div>
@@ -151,7 +194,7 @@ export default function Home() {
                     required
                   />
                 </div>
-              </div>             
+              </div>
               <button
                 type="submit"
                 className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 font-medium"
@@ -159,9 +202,9 @@ export default function Home() {
                 Registrar Alumno
               </button>
             </form>
-            {students.length > 0 ? (
+            {estudiantes.length > 0 ? (
               <div className="space-y-3">
-                {students.map((student) => (
+                {estudiantes.map((student) => (
                   <div key={student.id} className="p-4 bg-gray-100 rounded-lg">
                     <p className="text-lg font-medium">{student.nombre}</p>
                     <p className="text-sm text-gray-500">ID: {student.id}</p>
@@ -177,9 +220,9 @@ export default function Home() {
         {tabActivo === "tareas" && (
           <div>
             <h2 className="text-3xl font-bold mb-4">Tareas creadas</h2>
-            {tasks.length > 0 ? (
+            {tareas.length > 0 ? (
               <div className="space-y-3">
-                {tasks.map((task) => (
+                {tareas.map((task) => (
                   <div key={task.id} className="p-4 bg-gray-100 rounded-lg">
                     <p className="text-lg font-medium">{task.titulo}</p>
                     <p className="text-sm text-gray-500">Vence: {task.fecha_entrega}</p>
@@ -257,6 +300,18 @@ export default function Home() {
                       <option value="baja">Baja</option>
                     </select>
                   </div>
+                    {estudiantes.length > 0 ? (
+              <div className="space-y-3">
+                {estudiantes.map((student) => (
+                  <div key={student.id} className="p-4 bg-gray-100 rounded-lg">
+                    <p className="text-lg font-medium">{student.nombre}</p>
+                    <p className="text-sm text-gray-500">ID: {student.id}</p>                    
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">No hay estudiantes registrados</p>
+            )}
                 </div>
               </div>
 
@@ -273,3 +328,4 @@ export default function Home() {
     </div>
   );
 }
+
