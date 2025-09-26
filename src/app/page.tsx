@@ -57,7 +57,7 @@ export default function Home() {
         await createEstudiante({
           nombre: values.nombre,
           rut: values.rut,
-          correo: values.correo,       
+          correo: values.correo,
         });
       } catch (error) {
 
@@ -65,7 +65,7 @@ export default function Home() {
         actions.setSubmitting(false);
       }
     }
-})
+  })
 
   const formikTarea = useFormik({
     initialValues: {
@@ -88,7 +88,7 @@ export default function Home() {
         });
         actions.resetForm();
       } catch (error) {
-      
+
       } finally {
         actions.setSubmitting(false);
       }
@@ -300,18 +300,27 @@ export default function Home() {
                       <option value="baja">Baja</option>
                     </select>
                   </div>
-                    {estudiantes.length > 0 ? (
-              <div className="space-y-3">
-                {estudiantes.map((student) => (
-                  <div key={student.id} className="p-4 bg-gray-100 rounded-lg">
-                    <p className="text-lg font-medium">{student.nombre}</p>
-                    <p className="text-sm text-gray-500">ID: {student.id}</p>                    
+                </div>
+
+                <div>
+                  <label htmlFor="estudiante" className="block text-sm font-medium text-gray-700 mb-2">
+                    Estudiante
+                  </label>
+                  <div className="relative">
+                    <select
+                      name="estudiante"
+                      id="estudiante"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                    >
+                      {estudiantes.length > 0 ? (
+                        estudiantes.map((student) => (
+                          <option key={student.id} value={student.id}>{student.nombre}</option>
+                        ))
+                      ) : (
+                        <option>No hay estudiantes registrados</option>
+                      )}
+                    </select>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500">No hay estudiantes registrados</p>
-            )}
                 </div>
               </div>
 
